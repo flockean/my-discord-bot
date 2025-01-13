@@ -2,13 +2,10 @@ from typing import Type
 
 from sqlalchemy import Engine
 from sqlalchemy.engine.create import event
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 from src.database.db_setup import engine
 from src.models.schemas import Base
-
-Session = sessionmaker(bind=engine)
-db = Session()
 
 
 @event.listens_for(Engine, "connect")
@@ -18,20 +15,26 @@ def enable_sqlite_fks(dbapi_connection, connection_record):
     cursor.close()
 
 
-def add(db_model: Base) -> None:
-    # Errorhandling needs to be done
+def get_db():
+    db = Session(engine)
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def add(db_model: Base, db: Session) -> None:
     db.add(db_model)
     db.commit()
-    db.refresh(db_model)  # i dont know what this does
+    db.refresh(db_model)
 
 
-def delete(table: Type[Base], id: str) -> None:
+def delete(table: Type[Base], id: str, db: Session) -> None:
     result: Base | None = db.get(table, id)
     db.delete(result)
     db.commit()
 
 
-def get_all(table: Type[Base]) -> list[Base]:
-    # how to query SELECT *
+def get_all(table: Type[Base], db: Session) -> list[Base]:
     results: list[Base] = db.query(table).all()
     return results

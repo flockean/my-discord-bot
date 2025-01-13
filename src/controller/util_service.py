@@ -3,7 +3,6 @@ import os
 import random
 from enum import Enum
 from pathlib import Path
-
 import requests
 
 
@@ -36,13 +35,29 @@ def random_joke():
         text_value = data[0]["text"]
         logging.info("response: " + text_value)
         return text_value
-    return "Sorry Witze gehen leider gerade nicht ;("
+    return "Sorry Witze gehen leider gerade nicht ;"
+
+
+def fancy_enumeration_categorys(title: str, wordlistcat, wordlist):
+    formatedMessage = ""
+    for category in wordlistcat:
+        formatedMessage += f'\n > ### {category} \n > '
+        for word in wordlist:
+            formatedMessage += f'`{word}` '
+    return f'> ### {title} \n > {formatedMessage}'
+
+
+def fancy_enumeration(wordlist) -> str:
+    formatedMessage = "> "
+    for word in wordlist:
+        formatedMessage += f'`{word}` '
+    return formatedMessage
 
 
 class Category(Enum):
     interaction = ":interrobang: Anime"
     voice = ":microphone2: Voice"
     nsfw = ":underage: NSFW"
-    management = ":book: Managmenet"
+    management = ":book: Management"
     rest = ":x: Sonstiges"
     settings = ":gear: Settings"
