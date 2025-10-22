@@ -1,8 +1,11 @@
+from __future__ import annotations
+
+from enum import Enum
 import logging
 import os
-import random
-from enum import Enum
 from pathlib import Path
+import random
+
 import requests
 
 
@@ -17,6 +20,9 @@ def get_project_root() -> Path:
 
 # Random Parts
 def random_number(x, y):
+    # allow callers to pass bounds in either order
+    if x > y:
+        x, y = y, x
     return random.randint(x, y)
 
 
@@ -24,6 +30,10 @@ def random_word(arr=None):
     if arr is None:
         arr = []
     return random.choice(arr)
+
+
+def format_unix_time(unixtime: int) -> str:
+    return f"<t:{unixtime}:D>"
 
 
 # Not yet really correct
@@ -41,16 +51,16 @@ def random_joke():
 def fancy_enumeration_categorys(title: str, wordlistcat, wordlist):
     formatedMessage = ""
     for category in wordlistcat:
-        formatedMessage += f'\n > ### {category} \n > '
+        formatedMessage += f"\n > ### {category} \n > "
         for word in wordlist:
-            formatedMessage += f'`{word}` '
-    return f'> ### {title} \n > {formatedMessage}'
+            formatedMessage += f"`{word}` "
+    return f"> ### {title} \n > {formatedMessage}"
 
 
 def fancy_enumeration(wordlist) -> str:
     formatedMessage = "> "
     for word in wordlist:
-        formatedMessage += f'`{word}` '
+        formatedMessage += f"`{word}` "
     return formatedMessage
 
 

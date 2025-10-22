@@ -1,0 +1,276 @@
+[project]
+name = "my-discord-bot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "discord-py>=2.5.2",
+    "python-dotenv>=1.1.0",
+    "requests>=2.32.3",
+    "sqlalchemy>=2.0.41",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "dotenv>=0.9.9",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.22.0",
+    "uvloop>=0.17.0",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+src = [
+    "src",
+]
+format.docstring-code-format = true
+lint.select = [
+    "B",       # bugbear
+    "D",       # pydocstyle
+    "E",       # pycodestyle
+    "F",       # pyflakes
+    "FA100",   # add future annotations
+    "I",       # isort
+    "PGH004",  # pygrep-hooks - Use specific rule codes when using noqa
+    "PIE",     # flake8-pie
+    "PLC",     # pylint convention
+    "PLE",     # pylint error
+    "PLR",     # pylint refactor
+    "PLR1714", # Consider merging multiple comparisons
+    "PLW",     # pylint warning
+    "PYI",     # flake8-pyi
+    "RUF",     # ruff
+    "T100",    # flake8-debugger
+    "UP",      # pyupgrade
+    "W",       # pycodestyle
+]
+lint.ignore = [
+    # bugbear ignore
+    "B004", # Using `hasattr(x, "__call__")` to test if x is callable is unreliable.
+    "B007", # Loop control variable `i` not used within loop body
+    "B009", # Do not call `getattr` with a constant attribute value
+    "B010", # [*] Do not call `setattr` with a constant attribute value.
+    "B011", # Do not `assert False` (`python -O` removes these calls)
+    "B028", # No explicit `stacklevel` keyword argument found
+    # pydocstyle ignore
+    "D100", # Missing docstring in public module
+    "D101", # Missing docstring in public class
+    "D102", # Missing docstring in public method
+    "D103", # Missing docstring in public function
+    "D104", # Missing docstring in public package
+    "D105", # Missing docstring in magic method
+    "D106", # Missing docstring in public nested class
+    "D107", # Missing docstring in `__init__`
+    "D205", # 1 blank line required between summary line and description
+    "D209", # [*] Multi-line docstring closing quotes should be on a separate line
+    "D400", # First line should end with a period
+    "D401", # First line of docstring should be in imperative mood
+    "D402", # First line should not be the function's signature
+    "D404", # First word of the docstring should not be "This"
+    "D415", # First line should end with a period, question mark, or exclamation point
+    # pytest can do weird low-level things, and we usually know
+    # what we're doing when we use type(..) is ...
+    "E721", # Do not compare types, use `isinstance()`
+    # pylint ignore
+    "PLC0105", # `TypeVar` name "E" does not reflect its covariance;
+    "PLC0414", # Import alias does not rename original package
+    "PLC0415", # import should be at top level of package
+    "PLR0124", # Name compared with itself
+    "PLR0133", # Two constants compared in a comparison (lots of those in tests)
+    "PLR0402", # Use `from x.y import z` in lieu of alias
+    "PLR0911", # Too many return statements
+    "PLR0912", # Too many branches
+    "PLR0913", # Too many arguments in function definition
+    "PLR0915", # Too many statements
+    "PLR2004", # Magic value used in comparison
+    "PLR2044", # Line with empty comment
+    "PLR5501", # Use `elif` instead of `else` then `if`
+    "PLW0120", # remove the else and dedent its contents
+    "PLW0603", # Using the global statement
+    "PLW1641", # Does not implement the __hash__ method
+    "PLW2901", # for loop variable overwritten by assignment target
+    # ruff ignore
+    "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
+]
+lint.per-file-ignores."src/_pytest/_py/**/*.py" = [
+    "B",
+    "PYI",
+]
+lint.per-file-ignores."src/_pytest/_version.py" = [
+    "I001",
+]
+# can't be disabled on a line-by-line basis in file
+lint.per-file-ignores."testing/code/test_source.py" = [
+    "F841",
+]
+lint.per-file-ignores."testing/python/approx.py" = [
+    "B015",
+]
+lint.extend-safe-fixes = [
+    "UP006",
+    "UP007",
+]
+lint.isort.combine-as-imports = true
+lint.isort.force-single-line = true
+lint.isort.force-sort-within-sections = true
+lint.isort.known-local-folder = [
+    "pytest",
+    "_pytest",
+]
+lint.isort.lines-after-imports = 2
+lint.isort.order-by-type = false
+lint.isort.required-imports = [
+    "from __future__ import annotations",
+]
+# In order to be able to format for 88 char in ruff format
+lint.pycodestyle.max-line-length = 120
+lint.pydocstyle.convention = "pep257"
+lint.pyupgrade.keep-runtime-typing = false
+
+[tool.pylint.main]
+# Maximum number of characters on a single line.
+max-line-length = 120
+disable = [
+    "abstract-method",
+    "arguments-differ",
+    "arguments-renamed",
+    "assigning-non-slot",
+    "attribute-defined-outside-init",
+    "bad-builtin",
+    "bad-classmethod-argument",
+    "bad-dunder-name",
+    "bad-mcs-method-argument",
+    "broad-exception-caught",
+    "broad-exception-raised",
+    "cell-var-from-loop",                     # B023 from ruff / flake8-bugbear
+    "comparison-of-constants",                # disabled in ruff (PLR0133)
+    "comparison-with-callable",
+    "comparison-with-itself",                 # PLR0124 from ruff
+    "condition-evals-to-constant",
+    "consider-alternative-union-syntax",
+    "confusing-consecutive-elif",
+    "consider-using-assignment-expr",
+    "consider-using-dict-items",
+    "consider-using-from-import",
+    "consider-using-f-string",
+    "consider-using-in",
+    "consider-using-namedtuple-or-dataclass",
+    "consider-using-ternary",
+    "consider-using-tuple",
+    "consider-using-with",
+    "consider-using-from-import",             # not activated by default, PLR0402 disabled in ruff
+    "consider-ternary-expression",
+    "cyclic-import",
+    "differing-param-doc",
+    "docstring-first-line-empty",
+    "deprecated-argument",
+    "deprecated-attribute",
+    "deprecated-class",
+    "disallowed-name",                        # foo / bar are used often in tests
+    "duplicate-code",
+    "else-if-used",                           # not activated by default, PLR5501 disabled in ruff
+    "empty-comment",                          # not activated by default, PLR2044 disabled in ruff
+    "eval-used",
+    "eq-without-hash",                        # PLW1641 disabled in ruff
+    "exec-used",
+    "expression-not-assigned",
+    "fixme",
+    "global-statement",                       # PLW0603 disabled in ruff
+    "import-error",
+    "import-outside-toplevel",                # PLC0415 disabled in ruff
+    "import-private-name",
+    "inconsistent-return-statements",
+    "invalid-bool-returned",
+    "invalid-name",
+    "invalid-repr-returned",
+    "invalid-str-returned",
+    "keyword-arg-before-vararg",
+    "line-too-long",
+    "magic-value-comparison",                 # not activated by default, PLR2004 disabled in ruff
+    "method-hidden",
+    "missing-docstring",
+    "missing-param-doc",
+    "missing-raises-doc",
+    "missing-timeout",
+    "missing-type-doc",
+    "misplaced-bare-raise",                   # PLE0704 from ruff
+    "misplaced-comparison-constant",
+    "multiple-statements",                    # multiple-statements-on-one-line-colon (E701) from ruff
+    "no-else-break",
+    "no-else-continue",
+    "no-else-raise",
+    "no-else-return",
+    "no-member",
+    "no-name-in-module",
+    "no-self-argument",
+    "no-self-use",
+    "not-an-iterable",
+    "not-callable",
+    "pointless-exception-statement",          # https://github.com/pytest-dev/pytest/pull/12379
+    "pointless-statement",                    # https://github.com/pytest-dev/pytest/pull/12379
+    "pointless-string-statement",             # https://github.com/pytest-dev/pytest/pull/12379
+    "possibly-used-before-assignment",
+    "protected-access",
+    "raise-missing-from",
+    "redefined-argument-from-local",
+    "redefined-builtin",
+    "redefined-loop-name",                    # PLW2901 disabled in ruff
+    "redefined-outer-name",
+    "redefined-variable-type",
+    "reimported",
+    "simplifiable-condition",
+    "simplifiable-if-expression",
+    "singleton-comparison",
+    "superfluous-parens",
+    "super-init-not-called",
+    "too-complex",
+    "too-few-public-methods",
+    "too-many-ancestors",
+    "too-many-arguments",                     # disabled in ruff
+    "too-many-branches",                      # disabled in ruff
+    "too-many-function-args",
+    "too-many-instance-attributes",
+    "too-many-lines",
+    "too-many-locals",
+    "too-many-nested-blocks",
+    "too-many-positional-arguments",
+    "too-many-public-methods",
+    "too-many-return-statements",             # disabled in ruff
+    "too-many-statements",                    # disabled in ruff
+    "too-many-try-statements",
+    "try-except-raise",
+    "typevar-name-incorrect-variance",        # PLC0105 disabled in ruff
+    "unbalanced-tuple-unpacking",
+    "undefined-loop-variable",
+    "undefined-variable",
+    "unexpected-keyword-arg",
+    "unidiomatic-typecheck",
+    "unnecessary-comprehension",
+    "unnecessary-dunder-call",
+    "unnecessary-lambda",
+    "unnecessary-lambda-assignment",
+    "unpacking-non-sequence",
+    "unspecified-encoding",
+    "unsubscriptable-object",
+    "unused-argument",
+    "unused-import",
+    "unused-variable",
+    "used-before-assignment",
+    "use-dict-literal",
+    "use-implicit-booleaness-not-comparison",
+    "use-implicit-booleaness-not-len",
+    "use-set-for-membership",
+    "useless-else-on-loop",                   # PLC0414 disabled in ruff
+    "useless-import-alias",
+    "useless-return",
+    "using-constant-test",
+    "while-used",
+    "wrong-import-order",                     # handled by isort / ruff
+    "wrong-import-position",                  # handled by isort / ruff
+]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"

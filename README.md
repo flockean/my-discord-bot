@@ -9,25 +9,35 @@ This is my first Discord Bot Project in GitHub. Usage of this is own Methods of 
 1. Create .env and enter your token from Discord (developer) -> Bot
 1. Discord (developer) -> OAuth2 -> URL Generator.
     ~~~
-    SCOPES: 'bot'
-    BOT PERMISSIONS: 'Send Messages'
-    ~~~
-   -> copy GENERATED URL  
-   -> paste into browser  
-   -> select server
+    # my-discord-bot
 
-1. Create and activate virtual environment (optional)
-    ~~~
-   cd src
-   python3 -m venv venv
-   source venv/bin/activate
-    ~~~
+    This repository contains a small Discord bot. The following describes how to set up a virtual environment and run tests.
 
-1. Install dependencies
-    ~~~
-    pip3 install -r requirements.txt
-    ~~~
+    ## Setup
 
-1. Execute main
-    ~~~
-    python3 main.py
+    1. Create a Python virtual environment and activate it:
+
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate
+    ```
+
+    2. Install the package and dev dependencies (pyproject.toml exposes a "dev" dependency group):
+
+    ```bash
+    pip install -e .[dev]
+    ```
+
+    ## Running tests
+
+    After installing the dev extras, run pytest:
+
+    ```bash
+    pytest -q
+    ```
+
+    The dev extras include `pytest`, `pytest-asyncio`, and `uvloop`. Use the virtualenv to ensure tests run in an isolated environment.
+
+    For asyncio tests, pytest-asyncio is used. uvloop is optional and included in dev extras for faster event loop performance if available.
+
+    Enjoy!

@@ -1,55 +1,50 @@
-import datetime
+from __future__ import annotations
+
 from datetime import datetime
-from enum import Enum
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import DeclarativeBase, relationship
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import relationship
 
 
 class Base(DeclarativeBase):
     pass
 
-class DMMessage(Base):
-    __tablename__ = "dmmessage"
-    id: Mapped[datetime] = mapped_column(primary_key=True)
-    author: Mapped[str]
-    content: Mapped[str]
 
-    def __init__(self, author, content):
-        self.id = datetime.now()
-        self.author = author
-        self.content = content
+class BirthdaySchema(Base):
+    """Model for storing user birthdays."""
 
-    def __repr__(self):
-        return f'{self.id} - {self.author} - {self.content} \n'
+    __tablename__ = "birthdays"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    birthday: Mapped[datetime] = mapped_column(nullable=False)
+    # Track the year when the bot last announced this birthday to avoid duplicate announcements
+    last_announced_year: Mapped[int | None] = mapped_column(nullable=True)
 
-class GameProgress(Base):
-    __tablename__ = "game_progress"
-    id_name: Mapped[str] = mapped_column(primary_key=True)
-    game_type: Mapped[str] = mapped_column(ForeignKey("game_type.id_name"))
-    in_progress: Mapped[int]
-
-    game_category: Mapped["GameType"] = relationship(back_populates="game_progress", primaryjoin="GameProgress.game_type==GameType.id_name")
-
-    def __init__(self, id_name, game_type, in_progress):
-        self.id_name = id_name
-        self.game_type = game_type
-        self.in_progress = in_progress
-
-    def __repr__(self):
-        return f'> {self.in_progress} {self.id_name}'
+    # reference the actual mapped class name
+    user = relationship("UserSchema", back_populates="birthdays")
 
 
-class GameType(Base):
-    __tablename__ = "game_type"
-    id_name: Mapped[str] = mapped_column(primary_key=True)
+class UserSchema(Base):
+    """Model for storing user information."""
 
-    def __repr__(self) -> str:
-        return f"{self.id_name}"
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    birthdays: Mapped[list[BirthdaySchema]] = relationship(
+        "BirthdaySchema", back_populates="user", cascade="all, delete-orphan"
+    )
 
-class ProgressStatus(Enum):
-    notStarted = 1
-    inProgress = 2
-    finished = 3
 
+class SettingSchema(Base):
+    """Guild-scoped settings table. Primary key is (guild_id, key).
+
+    Use guild_id=0 for global settings.
+    """
+
+    __tablename__ = "settings"
+    guild_id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(primary_key=True)
+    value: Mapped[str] = mapped_column(nullable=False)

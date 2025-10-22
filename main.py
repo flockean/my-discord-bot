@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from src.controller.client_controller import start_bot
 from src.database.db_setup import init_db
 
