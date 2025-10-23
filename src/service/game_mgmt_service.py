@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from typing import cast
 
 from sqlalchemy.orm import Session
 
 from src.database import database_utils
-from src.models.schemas import Gameprogress, Gamegenre
+from src.models.schemas import Gamegenre
+from src.models.schemas import Gameprogress
 
 
 def create_game(game: Gameprogress, db: Session) -> Gameprogress:
