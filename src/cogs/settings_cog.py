@@ -4,7 +4,7 @@ import re
 
 from discord.ext import commands
 
-from src.database import database_utils
+from src.service import settings_service
 from src.service.util_service import Category
 
 
@@ -69,7 +69,7 @@ class Settings(commands.Cog):
 
         # Save as guild-scoped setting
         guild_id = ctx.guild.id if ctx.guild else 0
-        database_utils.set_setting("birthday_channel_id", str(cid), guild_id=guild_id)
+        settings_service.set_setting("birthday_channel_id", str(cid), guild_id=guild_id)
         await ctx.send(f"Birthday channel set to <#{cid}>")
 
     @commands.command(
@@ -79,7 +79,7 @@ class Settings(commands.Cog):
     )
     async def get_birthday_channel(self, ctx):
         guild_id = ctx.guild.id if ctx.guild else 0
-        val = database_utils.get_setting("birthday_channel_id", guild_id=guild_id)
+        val = settings_service.get_setting("birthday_channel_id", guild_id=guild_id)
         if val:
             await ctx.send(f"Configured birthday channel: <#{val}>")
         else:

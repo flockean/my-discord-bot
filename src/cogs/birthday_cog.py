@@ -8,9 +8,8 @@ from discord import Member
 from discord.ext import commands
 
 from src.database import database_utils
-from src.database.database_utils import get_birthday_for_user
-from src.database.database_utils import get_birthdays_today
 from src.models.schemas import BirthdaySchema
+from src.models.schemas import UserSchema
 from src.service.logger_service import logger
 from src.service.util_service import Category
 
@@ -21,7 +20,11 @@ class Birthday(commands.Cog):
 
     def _save_birthday(self, target_id: int, bdate: date):
         """Shared helper to persist a birthday for a user id."""
-        database_utils.ensure_user_exists(target_id)
+        # Ensure user exists (create if missing)
+        existing = database_utils.get_by_id(UserSchema, target_id)
+        if not existing:
+            user = UserSchema(id=target_id, name="")
+            database_utils.add(user)
         birthday_entry = BirthdaySchema(user_id=target_id, birthday=bdate)
         database_utils.add(birthday_entry)
         logger.info(f"Saved birthday for {target_id}: {bdate}")
@@ -40,9 +43,12 @@ class Birthday(commands.Cog):
             # store as a real date object so SQLAlchemy/SQLite accepts it
             birthday_date = date(year, month, day)
             # Ensure the user exists in users table (foreign key) then persist birthday
-            database_utils.ensure_user_exists(
-                ctx.author.id, getattr(ctx.author, "name", None)
-            )
+            existing = database_utils.get_by_id(UserSchema, ctx.author.id)
+            if not existing:
+                user = UserSchema(
+                    id=ctx.author.id, name=getattr(ctx.author, "name", "")
+                )
+                database_utils.add(user)
             # Create a BirthdaySchema instance and persist
             birthday_entry = BirthdaySchema(
                 user_id=ctx.author.id, birthday=birthday_date
@@ -63,7 +69,22 @@ class Birthday(commands.Cog):
     )
     async def birthdays_today(self, ctx):
         """Get a list of users with birthdays today."""
-        await ctx.send(get_birthdays_today())
+        from datetime import datetime
+
+        now = datetime.now()
+        raw = database_utils.query_by_date_parts(
+            BirthdaySchema, "birthday", now.month, now.day
+        )
+
+        # format output
+        def _fmt(b):
+            if not getattr(b, "birthday", None):
+                return "unknown"
+            bd = b.birthday
+            return bd.strftime("%d-%m-%Y") if hasattr(bd, "strftime") else str(bd)
+
+        formatted = [f"<@{b.user_id}>: {_fmt(b)}" for b in raw]
+        await ctx.send("\n".join(formatted) if formatted else "No birthdays today.")
 
     # Slash command wrapper for get_birthday
     @app_commands.command(name="get_birthday")
@@ -87,7 +108,15 @@ class Birthday(commands.Cog):
                 return
             target_id = int(m.group(1))
 
-        birthday = get_birthday_for_user(target_id)
+        # fetch most recent birthday for the user
+        results = database_utils.get_by_filter(BirthdaySchema, user_id=target_id)
+        # pick newest by id if multiple
+        birthday_obj = None
+        if results:
+            birthday_obj = sorted(
+                results, key=lambda x: getattr(x, "id", 0), reverse=True
+            )[0]
+        birthday = getattr(birthday_obj, "birthday", None)
         if birthday:
             if hasattr(birthday, "strftime"):
                 await interaction.response.send_message(
@@ -177,7 +206,13 @@ class Birthday(commands.Cog):
                 return
             target_id = int(m.group(1))
 
-        birthday = get_birthday_for_user(target_id)
+        results = database_utils.get_by_filter(BirthdaySchema, user_id=target_id)
+        birthday_obj = None
+        if results:
+            birthday_obj = sorted(
+                results, key=lambda x: getattr(x, "id", 0), reverse=True
+            )[0]
+        birthday = getattr(birthday_obj, "birthday", None)
         if birthday:
             # birthday may be a date object; display as DD-MM-YYYY for clarity
             if hasattr(birthday, "strftime"):
@@ -215,14 +250,19 @@ class Birthday(commands.Cog):
             return
 
         # ensure user row exists and persist
-        database_utils.ensure_user_exists(target_id)
+        existing = database_utils.get_by_id(UserSchema, target_id)
+        if not existing:
+            database_utils.add(UserSchema(id=target_id, name=""))
         birthday_entry = BirthdaySchema(user_id=target_id, birthday=bdate)
         database_utils.add(birthday_entry)
         await ctx.send(f"Set birthday for <@{target_id}> to {date_str}.")
 
-        birthday = get_birthday_for_user(target_id)
-        if birthday:
-            await ctx.send(f"Birthday for <@{target_id}> is {birthday}.")
+        results = database_utils.get_by_filter(BirthdaySchema, user_id=target_id)
+        if results:
+            b = sorted(results, key=lambda x: getattr(x, "id", 0), reverse=True)[0]
+            await ctx.send(
+                f"Birthday for <@{target_id}> is {getattr(b, 'birthday', None)}."
+            )
         else:
             await ctx.send(f"No birthday found for <@{target_id}>.")
 

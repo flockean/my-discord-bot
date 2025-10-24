@@ -1,55 +1,23 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
-from types import ModuleType
-
-
-# Provide a lightweight dummy sqlalchemy package only if the real package is not importable
-if importlib.util.find_spec("sqlalchemy") is None:
-    # top-level package
-    sqlalchemy = ModuleType("sqlalchemy")
-    # minimal symbols expected by src.database.database_utils
-    sqlalchemy.Engine = object
-    sqlalchemy.text = lambda s: s
-
-    # sqlalchemy.engine.create.event and create_engine
-    engine_mod = ModuleType("sqlalchemy.engine")
-    create_mod = ModuleType("sqlalchemy.engine.create")
-
-    def dummy_listens_for(target, name):
-        def _decorator(fn):
-            return fn
-
-        return _decorator
-
-    create_mod.event = dummy_listens_for
-    engine_mod.create = create_mod
-    sqlalchemy.engine = engine_mod
-
-    # dummy create_engine returns a simple sentinel object used by db_setup; tests
-    # will not exercise real DB operations because Session is monkeypatched in tests
-    def create_engine(url, echo=False):
-        return object()
-
-    sqlalchemy.create_engine = create_engine
-    sys.modules["sqlalchemy.engine.create"] = create_mod
-
-    # sqlalchemy.orm.Session placeholder (actual Session will be monkeypatched in tests)
-    orm_mod = ModuleType("sqlalchemy.orm")
-    orm_mod.Session = object
-    sqlalchemy.orm = orm_mod
-
-    # register submodules
-    sys.modules["sqlalchemy"] = sqlalchemy
-    sys.modules["sqlalchemy.engine"] = engine_mod
-    sys.modules["sqlalchemy.engine.create"] = create_mod
-    sys.modules["sqlalchemy.orm"] = orm_mod
-
+from sqlalchemy import Column
+from sqlalchemy import String
 import src.database.database_utils as dbu
 
 
-def test_get_setting_none(monkeypatch):
+class DummyModel(dbu.Base):
+    __tablename__ = "dummy"
+    id = Column(String, primary_key=True)
+    field = Column(String)
+    date_field = Column(String)
+
+    def __init__(self, id="test1", field="value", date_field=None):
+        self.id = id
+        self.field = field
+        self.date_field = date_field
+
+
+def test_get_by_id(monkeypatch):
     class DummySession:
         def __enter__(self):
             return self
@@ -57,18 +25,23 @@ def test_get_setting_none(monkeypatch):
         def __exit__(self, *a):
             return False
 
-        def get(self, key):
+        def get(self, model, id):
+            if id == "exists":
+                return DummyModel()
             return None
 
     monkeypatch.setattr(dbu, "Session", lambda bind=None: DummySession())
-    assert dbu.get_setting("nope") is None
+    assert dbu.get_by_id(DummyModel, "exists") is not None
+    assert dbu.get_by_id(DummyModel, "missing") is None
 
 
-def test_format_get_birthdays_today(monkeypatch):
-    # mock execute to return rows
-    class DummyResult:
-        def fetchall(self):
-            return [(1, 12345, None)]
+def test_get_by_filter(monkeypatch):
+    class DummyExecute:
+        def scalars(self):
+            return self
+
+        def all(self):
+            return [DummyModel()]
 
     class DummySession:
         def __enter__(self):
@@ -77,10 +50,36 @@ def test_format_get_birthdays_today(monkeypatch):
         def __exit__(self, *a):
             return False
 
-        def execute(self, *args, **kwargs):
-            return DummyResult()
+        def execute(self, query):
+            return DummyExecute()
 
     monkeypatch.setattr(dbu, "Session", lambda bind=None: DummySession())
-    res = dbu.get_birthdays_today()
-    assert isinstance(res, list)
-    assert res[0]["user_id"] == 12345
+    results = dbu.get_by_filter(DummyModel, field="value")
+    assert isinstance(results, list)
+    assert len(results) == 1
+    assert isinstance(results[0], DummyModel)
+
+
+def test_query_by_date_parts(monkeypatch):
+    class DummyExecute:
+        def scalars(self):
+            return self
+
+        def all(self):
+            return [DummyModel()]
+
+    class DummySession:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def execute(self, query):
+            return DummyExecute()
+
+    monkeypatch.setattr(dbu, "Session", lambda bind=None: DummySession())
+    results = dbu.query_by_date_parts(DummyModel, "date_field", 10, 24)
+    assert isinstance(results, list)
+    assert len(results) == 1
+    assert isinstance(results[0], DummyModel)

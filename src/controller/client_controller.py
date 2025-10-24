@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 from src.cogs import birthday_cog
 from src.cogs import neko_cog
 from src.cogs import settings_cog
-from src.database import database_utils
 from src.database.db_setup import init_db
+from src.service import settings_service
 from src.service.birthday_service import event_on_day
 from src.service.birthday_service import run_birthday_checks
 from src.service.birthday_service import send_message_to_birthday_channel
@@ -87,7 +87,7 @@ async def _slash_ping(interaction):
 )
 async def _slash_get_birthday_channel(interaction):
     gid = interaction.guild.id if interaction.guild else 0
-    val = database_utils.get_setting("birthday_channel_id", guild_id=gid)
+    val = settings_service.get_setting("birthday_channel_id", guild_id=gid)
     if val:
         await interaction.response.send_message(
             f"Configured birthday channel: <#{val}>"
@@ -115,7 +115,7 @@ async def _slash_set_birthday_channel(interaction, channel_id: str = None):
     if cid is None:
         await interaction.response.send_message("Could not determine channel id.")
         return
-    database_utils.set_setting("birthday_channel_id", str(cid), guild_id=gid)
+    settings_service.set_setting("birthday_channel_id", str(cid), guild_id=gid)
     await interaction.response.send_message(f"Birthday channel set to <#{cid}>")
 
 
@@ -123,14 +123,42 @@ async def _slash_set_birthday_channel(interaction, channel_id: str = None):
     name="run_birthdays", description="Run birthday checks immediately (admin only)"
 )
 async def _slash_run_birthdays(interaction):
-    if interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message("Running birthday checks...")
-        await run_birthday_checks(client)
-        await interaction.followup.send("Birthday checks completed.")
-    else:
+    # This slash command must be invoked in a guild (server)
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "This command can only be run inside a server (guild).", ephemeral=True
+        )
+        return
+
+    # Resolve the invoking member to check permissions (User objects don't have guild_permissions)
+    member = None
+    try:
+        if isinstance(interaction.user, discord.Member):
+            member = interaction.user
+        else:
+            member = interaction.guild.get_member(interaction.user.id)
+            if member is None:
+                # try fetching if not cached
+                try:
+                    member = await interaction.guild.fetch_member(interaction.user.id)
+                except Exception:
+                    member = None
+    except Exception:
+        member = None
+
+    if (
+        member is None
+        or not getattr(member, "guild_permissions", None)
+        or not member.guild_permissions.administrator
+    ):
         await interaction.response.send_message(
             "You must be an administrator to run this.", ephemeral=True
         )
+        return
+
+    await interaction.response.send_message("Running birthday checks...")
+    await run_birthday_checks(client)
+    await interaction.followup.send("Birthday checks completed.")
 
 
 @client.command(

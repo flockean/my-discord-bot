@@ -14,7 +14,7 @@ from src.service.util_service import get_project_root
 db_dir = get_project_root() / "volume"
 os.makedirs(db_dir, exist_ok=True)
 db_file = db_dir / "discordFiles.db"
-engine = create_engine(f"sqlite:///{db_file}", echo=True)
+engine = create_engine(f"sqlite:///{db_file}", echo=False)
 
 
 def init_db() -> None:

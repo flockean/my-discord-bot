@@ -41,4 +41,4 @@ def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     return logger
 
 
-logger = setup_logger("DiscordBotLogger", logging.DEBUG)
+logger = setup_logger("DiscordBotLogger", logging.INFO)
